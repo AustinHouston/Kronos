@@ -1,0 +1,23 @@
+[project]
+name = 'Kronos'
+version = '0.1.0'
+
+requires-python = '>3.12'
+
+dependencies = [
+    "dask[dataframe,distributed]",
+    "pyarrow",
+    "h5py>=3.15.1",
+    "ipykernel>=7.1.0",
+    "jupyter>=1.1.1",
+    "matplotlib>=3.10.7",
+    "numpy>=2.3.5",
+    "pytest>=9.0.2",
+    "ruff>=0.15.2",
+    "scifireaders>=0.12.4",
+    "ase>=3.27.0",
+    "pyTEMlib>=0.2024.1.0",
+    "sidpy>=0.12.8",
+    "anyio>=4.0.0",
+    "ipympl>=0.10.0",
+]
