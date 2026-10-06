@@ -1966,7 +1966,7 @@ wheels = [
 [[package]]
 name = "kronos"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "anyio" },
     { name = "ase" },
@@ -1976,12 +1976,15 @@ dependencies = [
     { name = "ipympl" },
     { name = "jupyter" },
     { name = "matplotlib" },
+    { name = "numba" },
     { name = "numpy" },
+    { name = "pandas" },
     { name = "pyarrow" },
     { name = "pytemlib" },
     { name = "pytest" },
     { name = "ruff" },
     { name = "scifireaders" },
+    { name = "scipy" },
     { name = "sidpy" },
 ]
 
@@ -1995,12 +1998,15 @@ requires-dist = [
     { name = "ipympl", specifier = ">=0.10.0" },
     { name = "jupyter", specifier = ">=1.1.1" },
     { name = "matplotlib", specifier = ">=3.10.7" },
+    { name = "numba" },
     { name = "numpy", specifier = ">=2.3.5" },
+    { name = "pandas" },
     { name = "pyarrow" },
     { name = "pytemlib", specifier = ">=0.2024.1.0" },
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "ruff", specifier = ">=0.15.2" },
     { name = "scifireaders", specifier = ">=0.12.4" },
+    { name = "scipy" },
     { name = "sidpy", specifier = ">=0.12.8" },
 ]
 

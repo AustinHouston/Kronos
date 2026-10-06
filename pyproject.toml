@@ -1,6 +1,8 @@
 [project]
 name = 'Kronos'
 version = '0.1.0'
+description = 'Sort and cluster TimePix event data that does not fit in memory'
+readme = 'README.md'
 
 requires-python = '>3.12'
 
@@ -20,4 +22,21 @@ dependencies = [
     "sidpy>=0.12.8",
     "anyio>=4.0.0",
     "ipympl>=0.10.0",
+    "numba",
+    "pandas",
+    "scipy",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/kronos"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff.lint]
+extend-select = ["I"]
