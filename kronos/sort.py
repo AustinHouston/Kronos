@@ -28,7 +28,8 @@ def merge_sort(
     No unread event can be older than safe = (slowest file's newest toa -
     max_disorder), so every buffered event older than that is sorted and
     yielded. Raises ValueError if an event is older than an already yielded
-    part; then raise max_disorder or use bucket_sort.
+    part; then raise max_disorder or use bucket_sort. A file's disorder is its
+    largest step back in toa: max(running max of toa - toa).
 
     Peak memory with clustering is ~200 bytes * (part_rows + len(files) *
     chunk_rows): ~1.4 GB for 32 files at the defaults.
@@ -71,40 +72,9 @@ def bucket_sort(
     chunk_rows=10_000_000,
     columns=EVENT_COLUMNS,
 ):
-    """Yield toa-sorted parts from files in any order.
-
-    1. Count events per coarse time bin (toa only) to choose part edges.
-    2. Append each chunk's events to the temp file of their part.
-    3. Load, sort and yield one temp file at a time.
-    """
-    edges = _part_edges(files, part_rows, chunk_rows)
-    tmp_directory = new_directory(tmp_directory)
-    buckets = [tmp_directory / f"{k:05d}.bin" for k in range(len(edges) - 1)]
-    for path in files:
-        for chunk in read_chunks(path, columns, chunk_rows):
-            records = np.rec.fromarrays(
-                [chunk[name] for name in columns], names=columns
-            )
-            bucket_of = np.searchsorted(edges, records["toa"], "right") - 1
-            order = np.argsort(bucket_of, kind="stable")
-            bounds = np.searchsorted(bucket_of[order], np.arange(len(buckets) + 1))
-            for k in np.flatnonzero(np.diff(bounds)):
-                with open(buckets[k], "ab") as handle:
-                    records[order[bounds[k] : bounds[k + 1]]].tofile(handle)
-    for bucket in buckets:
-        if bucket.exists():
-            records = np.fromfile(bucket, dtype=records.dtype)
-            bucket.unlink()
-            part = {name: records[name] for name in columns}
-            yield take(part, time_order(part["toa"]))
-    tmp_directory.rmdir()
-
-
-def _part_edges(files, part_rows, chunk_rows):
-    """Toa edges so each part holds at most part_rows events.
-
-    A single coarse time bin larger than part_rows becomes its own part.
-    """
+    """Yield toa-sorted parts from files in any order, using temp files."""
+    # 1. Count events per coarse time bin (toa only) and choose part edges so
+    #    each part holds at most part_rows events (a bigger bin is its own part).
     counts = []
     for path in files:
         for chunk in read_chunks(path, ("toa",), chunk_rows):
@@ -118,7 +88,31 @@ def _part_edges(files, part_rows, chunk_rows):
             in_part = 0
         in_part += n_events
     edges.append(counts.index[-1] + 1)
-    return np.asarray(edges, dtype=np.uint64) << np.uint64(BIN_SHIFT)
+    edges = np.asarray(edges, dtype=np.uint64) << np.uint64(BIN_SHIFT)
+
+    # 2. Append each chunk's events to the temp file of their part.
+    tmp_directory = new_directory(tmp_directory)
+    buckets = [tmp_directory / f"{k:05d}.bin" for k in range(len(edges) - 1)]
+    for path in files:
+        for chunk in read_chunks(path, columns, chunk_rows):
+            records = np.rec.fromarrays(
+                [chunk[name] for name in columns], names=columns
+            )
+            bucket_of = np.searchsorted(edges, records["toa"], "right") - 1
+            order = np.argsort(bucket_of, kind="stable")
+            bounds = np.searchsorted(bucket_of[order], np.arange(len(buckets) + 1))
+            for k in np.flatnonzero(np.diff(bounds)):
+                with open(buckets[k], "ab") as handle:
+                    records[order[bounds[k] : bounds[k + 1]]].tofile(handle)
+
+    # 3. Load, sort and yield one temp file at a time.
+    for bucket in buckets:
+        if bucket.exists():
+            records = np.fromfile(bucket, dtype=records.dtype)
+            bucket.unlink()
+            part = {name: records[name] for name in columns}
+            yield take(part, time_order(part["toa"]))
+    tmp_directory.rmdir()
 
 
 def time_order(toa):
@@ -146,10 +140,3 @@ def _counting_order(t, first, span):
         order[starts[k]] = i
         starts[k] += 1
     return order
-
-
-def time_disorder(toa):
-    """Largest step back in toa: how much earlier an event can be stored after
-    a later one. 0 means sorted. merge_sort needs this below max_disorder."""
-    toa = np.asarray(toa, np.int64)
-    return int((np.maximum.accumulate(toa) - toa).max())

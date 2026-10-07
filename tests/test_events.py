@@ -2,13 +2,7 @@ import numpy as np
 import pytest
 from synthetic import make_events, write_event_files
 
-from kronos.events import find_files, load_parts, read_chunks, save_parts
-
-
-def test_find_files_filters_and_sorts(tmp_path):
-    for name in ("b_1.h5", "a_2.h5", "a_1.h5", "a.dat"):
-        (tmp_path / name).touch()
-    assert [p.name for p in find_files(tmp_path, "a_*.h5")] == ["a_1.h5", "a_2.h5"]
+from kronos.events import load_parts, read_chunks, save_parts
 
 
 def test_read_chunks_covers_every_row(tmp_path):

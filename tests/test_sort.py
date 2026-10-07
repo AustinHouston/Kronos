@@ -3,8 +3,8 @@ import pandas as pd
 import pytest
 from synthetic import make_events, write_event_files
 
-from kronos.events import concat, find_files
-from kronos.sort import bucket_sort, merge_sort, time_disorder, time_order
+from kronos.events import concat
+from kronos.sort import bucket_sort, merge_sort, time_order
 
 SMALL = {"chunk_rows": 7_000, "part_rows": 10_000}
 
@@ -13,7 +13,7 @@ SMALL = {"chunk_rows": 7_000, "part_rows": 10_000}
 def event_files(tmp_path, request):
     events = make_events(n_electrons=20_000, duration=2_000_000)
     write_event_files(tmp_path, events, jitter=request.param)
-    return find_files(tmp_path), events, request.param
+    return sorted(tmp_path.glob("*.h5")), events, request.param
 
 
 def assert_same_events_sorted(parts, events):
@@ -56,8 +56,3 @@ def test_time_order_matches_argsort():
     for toa in (rng.integers(0, 1_000, 5_000), rng.integers(0, 10**12, 5_000)):
         toa = toa.astype(np.uint64)
         assert np.array_equal(time_order(toa), np.argsort(toa, kind="stable"))
-
-
-def test_time_disorder():
-    assert time_disorder([1, 2, 3]) == 0
-    assert time_disorder([5, 1, 6, 4]) == 4

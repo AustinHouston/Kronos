@@ -15,11 +15,6 @@ import pyarrow.parquet as pq
 EVENT_COLUMNS = ("x", "y", "toa", "tot")
 
 
-def find_files(directory, pattern="*.h5"):
-    """Files in `directory` matching a glob pattern, sorted by name."""
-    return sorted(Path(directory).glob(pattern))
-
-
 def read_chunks(path, columns=EVENT_COLUMNS, chunk_rows=200_000):
     """Yield consecutive row ranges of one HDF5 file as dicts of columns."""
     with h5py.File(path, "r") as h5:

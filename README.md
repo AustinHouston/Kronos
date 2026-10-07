@@ -14,9 +14,12 @@ uv run pytest    # synthetic-data tests, a few seconds
 ```
 
 ```python
-from kronos import cluster_parts, find_files, merge_sort
+from pathlib import Path
 
-files = find_files("/Volumes/Extreme SSD/Timepix/MoS2_Kai_5b", "TestSeq1_1k_*.h5")
+from kronos.cluster import cluster_parts
+from kronos.sort import merge_sort
+
+files = sorted(Path("/Volumes/Extreme SSD/Timepix/MoS2_Kai_5b").glob("TestSeq1_1k_*.h5"))
 cluster_parts(merge_sort(files), "outputs/TestSeq1_1k/clusters", dt_max=2)
 ```
 
@@ -41,12 +44,11 @@ covering consecutive, non-overlapping time ranges.
 ## Layout
 
 ```
-src/kronos/
-    events.py    find files, read HDF5 chunks, part helpers, save/load parts
-    sort.py      merge_sort, bucket_sort, time_order, time_disorder
+kronos/
+    events.py    read HDF5 chunks, part helpers, save/load parts
+    sort.py      merge_sort, bucket_sort, time_order
     cluster.py   cluster_parts, label_events, summarize_clusters, neighbor_time_gaps
 tests/           synthetic HDF5 data with known electrons
 notebooks/       numbered walkthroughs
-legacy/          earlier Dask-based pipeline and notebooks (not maintained)
 outputs/         results, git-ignored
 ```
