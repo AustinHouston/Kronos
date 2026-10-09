@@ -25,6 +25,7 @@ dependencies = [
     "pandas",
     "scipy",
     "scikit-learn>=1.9.1",
+    "scienceplots>=2.2.2",
 ]
 
 [build-system]
