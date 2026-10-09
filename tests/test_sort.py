@@ -4,7 +4,7 @@ import pytest
 from synthetic import make_events, write_event_files
 
 from kronos.events import concat
-from kronos.sort import bucket_sort, merge_sort, time_order
+from kronos.sort import merge_sort, time_order
 
 small_parts = {'chunk_rows': 7_000, 'part_rows': 10_000}
 
@@ -36,14 +36,6 @@ def test_merge_sort_rejects_shuffled_files(tmp_path):
     files = write_event_files(tmp_path, events, jitter=None)
     with pytest.raises(ValueError, match='jumps back'):
         list(merge_sort(files, max_disorder=100, **small_parts))
-
-
-def test_bucket_sort_keeps_every_event(event_files, tmp_path):
-    files, events, _ = event_files
-    parts = list(bucket_sort(files, tmp_path / 'tmp', **small_parts))
-    assert_same_events_sorted(parts, events)
-    assert max(len(p['toa']) for p in parts) <= small_parts['part_rows']
-    assert not (tmp_path / 'tmp').exists()
 
 
 def test_time_order_matches_argsort():

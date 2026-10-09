@@ -43,8 +43,8 @@ covering consecutive, non-overlapping time ranges.
 
 1. **Sort** (`kronos.sort`). `merge_sort` reads every file once, front to back, all files
    in step, and counting-sorts everything older than the slowest file's newest `toa` minus
-   `max_disorder`. It raises if a file is more jumbled than that; `bucket_sort` handles any
-   order, at the cost of temp files and extra passes.
+   `max_disorder`. It raises if a file is more jumbled than that; a larger `max_disorder` only
+   costs memory.
 2. **Cluster** (`kronos.cluster`). `cluster_parts` labels each part with a union-find over a
    pixel grid, one time slice per core (`label_events`), writes one summary row per cluster
    (`summarize_clusters`), and carries clusters still open at a part's end into the next part.
@@ -57,7 +57,7 @@ covering consecutive, non-overlapping time ranges.
 ```
 kronos/
     events.py    read HDF5 chunks, part helpers, save/load parts
-    sort.py      merge_sort, bucket_sort, time_order
+    sort.py      merge_sort, time_order
     cluster.py   cluster_parts, cluster_tables, label_events, summarize_clusters, neighbor_time_gaps
 tests/           synthetic HDF5 data with known electrons
 notebooks/       numbered walkthroughs; plot_style.py is their shared plot style
