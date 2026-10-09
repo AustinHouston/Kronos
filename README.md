@@ -36,9 +36,9 @@ The notebooks, each a self-contained story:
    detector clock, turn clusters into STEM images: line, dwell and flyback measured from the data,
    and a darkfield image with virtual detectors chosen after a single pass.
 5. `notebooks/05_Moire_Analysis.ipynb`: the same run as a 4D-STEM dataset: the time bin per diffraction
-   pattern (4 × 4 probe positions), one pass into a 4D cube, zero-beam alignment on the disk edge, NMF of the
-   zero beam and of the scattered electrons across the moiré, and probe deconvolution of the position-averaged
-   pattern, which shows two crystals rotated by ~15°, as in the image FFT.
+   pattern (4 × 4 probe positions), zero-beam alignment on the disk edge, probe deconvolution of the
+   position-averaged pattern (two crystals rotated by ~15°, as in the image FFT), and maps of the twist across the
+   image from geometric phase analysis and from diffraction tiles.
 
 ## How it works
 
