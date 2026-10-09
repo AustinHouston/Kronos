@@ -105,7 +105,7 @@ def _ftoa_count(ftoa):
 
     Values 17..31 occur almost only in tot = 0 packets (manual section 24.4);
     read as value - 16 they put those pixels in time with the rest of their
-    cluster (notebooks/02_cluster_parameters.ipynb, section 6).
+    cluster (notebooks/01_Sorting_Events.ipynb, section 1b).
     """
     ftoa = np.asarray(ftoa, np.int64)
     return np.where(ftoa > 16, ftoa - 16, ftoa)

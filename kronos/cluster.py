@@ -2,7 +2,7 @@
 
 Two events belong together when they are on the same or an edge-adjacent
 pixel (|dx| + |dy| <= 1) and within dt_max toa ticks. Clusters are the
-connected components of that relation. notebooks/02_cluster_parameters.ipynb
+connected components of that relation. notebooks/02_Clustering_Choices.ipynb
 shows why: charge is shared only with edge neighbors, and same-electron
 events arrive within one tick of each other.
 
@@ -40,9 +40,12 @@ def label_events(x, y, toa, dt_max=1):
 
 
 def summarize_clusters(events, labels):
-    """One row per cluster (row index = label): first toa, duration,
-    ToT-weighted centroid, total ToT and number of events.
+    """One row per cluster (row index = label): first toa, duration, ToT-weighted
+    centroid (x, y), plain mean of the pixel positions (x_mean, y_mean), total ToT
+    and number of events.
 
+    The best impact estimate is a blend of the two centroids,
+    0.5 * x_mean + 0.5 * x (notebooks/03_Cluster_Centroids.ipynb).
     Events must be sorted by toa and labels numbered as label_events does.
     """
     toa = np.asarray(events['toa'], np.int64)
@@ -51,7 +54,7 @@ def summarize_clusters(events, labels):
     tot = np.asarray(events['tot'], np.float64)
     labels = np.asarray(labels, np.int64)
     columns = _summarize(labels, toa, x, y, tot, labels.max() + 1)
-    names = ('toa', 'duration', 'x', 'y', 'tot', 'n_events')
+    names = ('toa', 'duration', 'x', 'y', 'x_mean', 'y_mean', 'tot', 'n_events')
     return pd.DataFrame(dict(zip(names, columns)), copy=False)
 
 
@@ -156,6 +159,8 @@ def _summarize(labels, t, x, y, tot, n_clusters):
     duration = np.empty(n_clusters, dtype=np.int64)
     cx = np.zeros(n_clusters)
     cy = np.zeros(n_clusters)
+    mx = np.zeros(n_clusters)
+    my = np.zeros(n_clusters)
     tot_sum = np.zeros(n_clusters)
     count = np.zeros(n_clusters, dtype=np.int64)
     n_seen = 0
@@ -167,13 +172,17 @@ def _summarize(labels, t, x, y, tot, n_clusters):
         duration[k] = t[i] - first[k]  # events are sorted by toa
         cx[k] += tot[i] * x[i]
         cy[k] += tot[i] * y[i]
+        mx[k] += x[i]
+        my[k] += y[i]
         tot_sum[k] += tot[i]
         count[k] += 1
-    for k in range(n_clusters):  # ToT-weighted sums -> centroids
+    for k in range(n_clusters):  # sums -> centroids
+        mx[k] /= count[k]
+        my[k] /= count[k]
         if tot_sum[k] > 0:
             cx[k] /= tot_sum[k]
             cy[k] /= tot_sum[k]
-    return first, duration, cx, cy, tot_sum, count
+    return first, duration, cx, cy, mx, my, tot_sum, count
 
 
 @numba.njit(cache=True)

@@ -23,12 +23,18 @@ files = sorted(Path('/Volumes/Extreme SSD/Timepix/MoS2_Kai_5b').glob('TestSeq1_1
 cluster_parts(merge_sort(files), 'outputs/TestSeq1_1k/clusters', dt_max=1)
 ```
 
-The walkthrough is `notebooks/01_sort_and_cluster.ipynb`. Why clusters join edge-neighboring
-pixels within `dt_max = 1` tick, and how fast clustering is, is shown in
-`notebooks/02_cluster_parameters.ipynb`.
+The notebooks, each a self-contained story:
 
-For the detector-level background behind the event fields, read
-`docs/TimePixForDummies.md` and run `notebooks/05_TimePixForDummies.ipynb`.
+1. `notebooks/01_Sorting_Events.ipynb`: how the event files are laid out, how the fine time is
+   decoded, and how `merge_sort` turns shuffled files into one time-ordered stream, feeding
+   clustering in the same pass.
+2. `notebooks/02_Clustering_Choices.ipynb`: how clusters are found, and why they join
+   edge-neighboring pixels within `dt_max = 1` tick (accuracy and speed of the alternatives).
+3. `notebooks/03_Cluster_Centroids.ipynb`: where in its cluster the electron landed, from a
+   simulation of electrons in silicon fitted to the real clusters.
+4. `notebooks/04_connecting_timing.ipynb`: how the scan generator's line pulses, timestamped on the
+   detector clock, turn clusters into STEM images: line, dwell and flyback measured from the data,
+   and a darkfield image with virtual detectors chosen after a single pass.
 
 ## How it works
 

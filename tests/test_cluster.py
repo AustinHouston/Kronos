@@ -81,6 +81,14 @@ def test_summary_rows_follow_labels():
     assert summary.n_events.tolist() == [2, 2]
 
 
+def test_summary_has_weighted_and_plain_centroids():
+    events = {'x': [0, 1], 'y': [4, 4], 'toa': [1, 1], 'tot': [1, 3]}
+    summary = summarize_clusters(events, np.array([0, 0]))
+    assert summary.x.tolist() == [0.75]  # ToT-weighted: (0 * 1 + 1 * 3) / 4
+    assert summary.x_mean.tolist() == [0.5]  # plain mean of the pixel positions
+    assert summary.y_mean.tolist() == [4.0]
+
+
 def test_streamed_parts_match_one_big_part(tmp_path):
     events = make_events(n_electrons=30_000, duration=300_000, size=64)
     files = write_event_files(tmp_path, events, jitter=20)
