@@ -10,18 +10,12 @@ import numba
 import numpy as np
 import pandas as pd
 
-from kronos.events import EVENT_COLUMNS, concat, new_directory, read_chunks, take
+from kronos.events import concat, event_columns, new_directory, read_chunks, take
 
-BIN_SHIFT = 16  # bucket_sort plans parts in coarse bins of 2**16 toa ticks
+bin_shift = 16  # bucket_sort plans parts in coarse bins of 2**16 toa ticks
 
 
-def merge_sort(
-    files,
-    max_disorder=1 << 16,
-    chunk_rows=200_000,
-    part_rows=2_000_000,
-    columns=EVENT_COLUMNS,
-):
+def merge_sort(files, max_disorder=1 << 16, chunk_rows=200_000, part_rows=2_000_000, columns=event_columns):
     """Yield toa-sorted parts from files that are each sorted up to max_disorder.
 
     Files are read in step, always advancing the one furthest behind in time.
@@ -43,42 +37,36 @@ def merge_sort(
         chunk = next(chunks[path], None)
         if chunk is None:
             del chunks[path]
-        elif len(chunk["toa"]):
-            if int(chunk["toa"].min()) < done_until:
-                raise ValueError(f"{path} jumps back more than {max_disorder} ticks")
-            newest[path] = max(newest[path], int(chunk["toa"].max()))
+        else:
+            if int(chunk['toa'].min()) < done_until:
+                raise ValueError(f'{path} jumps back more than {max_disorder} ticks')
+            newest[path] = max(newest[path], int(chunk['toa'].max()))
             buffer.append(chunk)
-            n_buffered += len(chunk["toa"])
+            n_buffered += len(chunk['toa'])
         if buffer and (n_buffered >= flush_rows or not chunks):
             events = concat(buffer)
             if chunks:
                 safe = max(done_until, min(newest[p] for p in chunks) - max_disorder)
             else:
-                safe = int(events["toa"].max()) + 1
-            older = events["toa"] < safe
+                safe = int(events['toa'].max()) + 1
+            older = events['toa'] < safe
             part = take(events, older)
             buffer = [take(events, ~older)]
-            n_buffered = len(buffer[0]["toa"])
+            n_buffered = len(buffer[0]['toa'])
             del events, older  # free the merge buffer while the part is in use
-            if len(part["toa"]):
+            if len(part['toa']):
                 done_until = safe
-                yield take(part, time_order(part["toa"]))
+                yield take(part, time_order(part['toa']))
 
 
-def bucket_sort(
-    files,
-    tmp_directory,
-    part_rows=2_000_000,
-    chunk_rows=10_000_000,
-    columns=EVENT_COLUMNS,
-):
+def bucket_sort(files, tmp_directory, part_rows=2_000_000, chunk_rows=10_000_000, columns=event_columns):
     """Yield toa-sorted parts from files in any order, using temp files."""
     # 1. Count events per coarse time bin (toa only) and choose part edges so
     #    each part holds at most part_rows events (a bigger bin is its own part).
     counts = []
     for path in files:
-        for chunk in read_chunks(path, ("toa",), chunk_rows):
-            bins, n_events = np.unique(chunk["toa"] >> BIN_SHIFT, return_counts=True)
+        for chunk in read_chunks(path, ('toa',), chunk_rows):
+            bins, n_events = np.unique(chunk['toa'] >> bin_shift, return_counts=True)
             counts.append(pd.Series(n_events, index=bins))
     counts = pd.concat(counts).groupby(level=0).sum()
     edges, in_part = [counts.index[0]], 0
@@ -88,30 +76,27 @@ def bucket_sort(
             in_part = 0
         in_part += n_events
     edges.append(counts.index[-1] + 1)
-    edges = np.asarray(edges, dtype=np.uint64) << np.uint64(BIN_SHIFT)
+    edges = np.asarray(edges, dtype=np.uint64) << np.uint64(bin_shift)
 
     # 2. Append each chunk's events to the temp file of their part.
     tmp_directory = new_directory(tmp_directory)
-    buckets = [tmp_directory / f"{k:05d}.bin" for k in range(len(edges) - 1)]
+    buckets = [tmp_directory / f'{k:05d}.bin' for k in range(len(edges) - 1)]
     for path in files:
         for chunk in read_chunks(path, columns, chunk_rows):
-            records = np.rec.fromarrays(
-                [chunk[name] for name in columns], names=columns
-            )
-            bucket_of = np.searchsorted(edges, records["toa"], "right") - 1
-            order = np.argsort(bucket_of, kind="stable")
+            records = np.rec.fromarrays([chunk[name] for name in columns], names=columns)
+            bucket_of = np.searchsorted(edges, records['toa'], 'right') - 1
+            order = np.argsort(bucket_of, kind='stable')
             bounds = np.searchsorted(bucket_of[order], np.arange(len(buckets) + 1))
             for k in np.flatnonzero(np.diff(bounds)):
-                with open(buckets[k], "ab") as handle:
+                with open(buckets[k], 'ab') as handle:
                     records[order[bounds[k] : bounds[k + 1]]].tofile(handle)
 
     # 3. Load, sort and yield one temp file at a time.
-    for bucket in buckets:
-        if bucket.exists():
-            records = np.fromfile(bucket, dtype=records.dtype)
-            bucket.unlink()
-            part = {name: records[name] for name in columns}
-            yield take(part, time_order(part["toa"]))
+    for bucket in buckets:  # every part holds at least one bin with events
+        records = np.fromfile(bucket, dtype=records.dtype)
+        bucket.unlink()
+        part = {name: records[name] for name in columns}
+        yield take(part, time_order(part['toa']))
     tmp_directory.rmdir()
 
 
@@ -119,11 +104,9 @@ def time_order(toa):
     """Indices that sort toa (stable): counting sort when the toa span is small,
     as within a part, argsort otherwise."""
     t = np.asarray(toa).astype(np.int64)
-    if len(t) == 0:
-        return np.empty(0, dtype=np.int64)
     first, span = t.min(), t.max() - t.min()
     if span > 4 * len(t) + 1_000_000:
-        return np.argsort(t, kind="stable")
+        return np.argsort(t, kind='stable')
     return _counting_order(t, first, span)
 
 
