@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = ">3.12"
 resolution-markers = [
     "python_full_version >= '3.14' and sys_platform == 'win32'",
@@ -844,9 +844,6 @@ dataframe = [
     { name = "numpy" },
     { name = "pandas" },
     { name = "pyarrow" },
-]
-distributed = [
-    { name = "distributed" },
 ]
 
 [[package]]
@@ -1970,7 +1967,6 @@ source = { editable = "." }
 dependencies = [
     { name = "anyio" },
     { name = "ase" },
-    { name = "dask", extra = ["dataframe", "distributed"] },
     { name = "h5py" },
     { name = "ipykernel" },
     { name = "ipympl" },
@@ -1984,6 +1980,7 @@ dependencies = [
     { name = "pytest" },
     { name = "ruff" },
     { name = "scifireaders" },
+    { name = "scikit-learn" },
     { name = "scipy" },
     { name = "sidpy" },
 ]
@@ -1992,7 +1989,6 @@ dependencies = [
 requires-dist = [
     { name = "anyio", specifier = ">=4.0.0" },
     { name = "ase", specifier = ">=3.27.0" },
-    { name = "dask", extras = ["dataframe", "distributed"] },
     { name = "h5py", specifier = ">=3.15.1" },
     { name = "ipykernel", specifier = ">=7.1.0" },
     { name = "ipympl", specifier = ">=0.10.0" },
@@ -2006,6 +2002,7 @@ requires-dist = [
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "ruff", specifier = ">=0.15.2" },
     { name = "scifireaders", specifier = ">=0.12.4" },
+    { name = "scikit-learn", specifier = ">=1.9.1" },
     { name = "scipy" },
     { name = "sidpy", specifier = ">=0.12.8" },
 ]
